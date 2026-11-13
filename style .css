@@ -1,0 +1,413 @@
+:root,
+.ah-root[data-ah-theme="moonlight"] {
+    --ah-glass-bg: rgba(255, 255, 255, 0.045);
+    --ah-glass-border: rgba(255, 255, 255, 0.22);
+    --ah-glass-glow: rgba(185, 215, 255, 0.10);
+    --ah-card-bg: rgba(255, 255, 255, 0.055);
+    --ah-card-border: rgba(255, 255, 255, 0.14);
+    --ah-accent: #d5e5f7;
+    --ah-accent-strong: #eef5ff;
+    --ah-pill-bg: rgba(168, 198, 250, 0.13);
+    --ah-pill-border: rgba(185, 212, 255, 0.30);
+    --ah-pill-text: #d8e8ff;
+    --ah-dot: #9ec8ff;
+    --ah-text: rgba(245, 248, 252, 0.94);
+}
+
+.ah-root[data-ah-theme="crimson"] {
+    --ah-glass-bg: rgba(42, 14, 22, 0.34);
+    --ah-glass-border: rgba(255, 155, 175, 0.24);
+    --ah-glass-glow: rgba(235, 75, 110, 0.13);
+    --ah-card-bg: rgba(255, 210, 220, 0.055);
+    --ah-card-border: rgba(255, 165, 185, 0.16);
+    --ah-accent: #f7ccd5;
+    --ah-accent-strong: #fff0f3;
+    --ah-pill-bg: rgba(240, 105, 135, 0.15);
+    --ah-pill-border: rgba(255, 150, 175, 0.32);
+    --ah-pill-text: #ffd6df;
+    --ah-dot: #ff7b9c;
+    --ah-text: rgba(252, 244, 246, 0.94);
+}
+
+.ah-root[data-ah-theme="violet"] {
+    --ah-glass-bg: rgba(28, 18, 46, 0.34);
+    --ah-glass-border: rgba(205, 175, 255, 0.24);
+    --ah-glass-glow: rgba(165, 110, 250, 0.14);
+    --ah-card-bg: rgba(230, 210, 255, 0.055);
+    --ah-card-border: rgba(205, 175, 255, 0.16);
+    --ah-accent: #e3d1ff;
+    --ah-accent-strong: #f6f0ff;
+    --ah-pill-bg: rgba(175, 125, 255, 0.15);
+    --ah-pill-border: rgba(205, 165, 255, 0.32);
+    --ah-pill-text: #eadbff;
+    --ah-dot: #c49bff;
+    --ah-text: rgba(248, 244, 255, 0.94);
+}
+
+.ah-root[data-ah-theme="amber"] {
+    --ah-glass-bg: rgba(40, 26, 14, 0.32);
+    --ah-glass-border: rgba(255, 210, 155, 0.24);
+    --ah-glass-glow: rgba(245, 175, 85, 0.12);
+    --ah-card-bg: rgba(255, 235, 205, 0.055);
+    --ah-card-border: rgba(255, 210, 155, 0.16);
+    --ah-accent: #f7dfc0;
+    --ah-accent-strong: #fff7eb;
+    --ah-pill-bg: rgba(245, 180, 95, 0.14);
+    --ah-pill-border: rgba(255, 205, 135, 0.30);
+    --ah-pill-text: #ffe6c4;
+    --ah-dot: #ffbe6b;
+    --ah-text: rgba(253, 248, 240, 0.94);
+}
+
+.ah-root[data-ah-theme="emerald"] {
+    --ah-glass-bg: rgba(14, 36, 30, 0.32);
+    --ah-glass-border: rgba(155, 240, 205, 0.23);
+    --ah-glass-glow: rgba(75, 210, 160, 0.12);
+    --ah-card-bg: rgba(205, 255, 235, 0.05);
+    --ah-card-border: rgba(155, 240, 205, 0.15);
+    --ah-accent: #c9f2e2;
+    --ah-accent-strong: #edfff8;
+    --ah-pill-bg: rgba(85, 215, 165, 0.14);
+    --ah-pill-border: rgba(140, 235, 195, 0.30);
+    --ah-pill-text: #d4faeb;
+    --ah-dot: #6ee7b7;
+    --ah-text: rgba(242, 252, 248, 0.94);
+}
+
+@keyframes ahPulse {
+    0%, 100% { opacity: 0.45; transform: scale(0.92); box-shadow: 0 0 4px var(--ah-dot); }
+    50% { opacity: 1; transform: scale(1.12); box-shadow: 0 0 10px var(--ah-dot); }
+}
+
+@keyframes ahCascadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ah-root {
+    background:
+        radial-gradient(120% 80% at 15% 0%, var(--ah-glass-glow), transparent 65%),
+        var(--ah-glass-bg);
+    border: 1px solid var(--ah-glass-border);
+    border-top-color: rgba(255, 255, 255, 0.32);
+    border-left-color: rgba(255, 255, 255, 0.26);
+    border-radius: 18px;
+    margin: 0 0 14px;
+    color: var(--ah-text);
+    backdrop-filter: blur(28px) saturate(175%);
+    -webkit-backdrop-filter: blur(28px) saturate(175%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 1px 0 0 rgba(255, 255, 255, 0.08),
+        0 10px 28px rgba(0, 0, 0, 0.30);
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.ah-summary {
+    padding: 12px 15px;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--ah-accent);
+    user-select: none;
+    text-shadow: 0 0 12px var(--ah-glass-glow);
+}
+
+.ah-summary::-webkit-details-marker {
+    display: none;
+}
+
+.ah-title-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+}
+
+.ah-moon {
+    font-size: 12.5px;
+    filter: drop-shadow(0 0 6px var(--ah-dot));
+}
+
+.ah-status-right {
+    opacity: 0.78;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+}
+
+.ah-time-preview {
+    color: var(--ah-accent-strong);
+    opacity: 0.85;
+    letter-spacing: 0.6px;
+    font-size: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    padding: 1.5px 6px;
+    border-radius: 999px;
+}
+
+.ah-root[open] > .ah-summary .ah-time-preview {
+    display: none;
+}
+
+.ah-pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ah-dot);
+    display: inline-block;
+    animation: ahPulse 2.8s infinite ease-in-out;
+}
+
+.ah-chevron {
+    display: inline-block;
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ah-root[open] > .ah-summary .ah-chevron,
+.ah-private[open] > .ah-private-summary .ah-chevron {
+    transform: rotate(180deg);
+}
+
+.ah-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--ah-glass-border), transparent);
+    margin: 0 14px;
+}
+
+.ah-content {
+    padding: 12px 13px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    white-space: normal;
+    animation: ahCascadeIn 0.26s ease-out;
+}
+
+.ah-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ah-section-title {
+    font-size: 10.5px;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--ah-accent);
+    opacity: 0.90;
+    padding-left: 2px;
+}
+
+.ah-card {
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.075) 0%, var(--ah-card-bg) 100%);
+    border: 1px solid var(--ah-card-border);
+    border-top-color: rgba(255, 255, 255, 0.22);
+    border-left-color: rgba(255, 255, 255, 0.18);
+    border-radius: 13px;
+    padding: 9px 11px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 4px 12px rgba(0, 0, 0, 0.14);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ah-kv-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.ah-kv-label {
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--ah-pill-text);
+    background: var(--ah-pill-bg);
+    border: 1px solid var(--ah-pill-border);
+    border-radius: 6px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+}
+
+.ah-kv-val {
+    color: var(--ah-text);
+    overflow-wrap: anywhere;
+}
+
+.ah-char-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.ah-char-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ah-accent-strong);
+}
+
+.ah-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.ah-pill {
+    font-size: 10.5px;
+    line-height: 1.4;
+    padding: 3.5px 9px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.ah-pill-emotion {
+    background: var(--ah-pill-bg);
+    border: 1px solid var(--ah-pill-border);
+    color: var(--ah-pill-text);
+}
+
+.ah-pill-state {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: rgba(235, 242, 250, 0.88);
+}
+
+.ah-char-action {
+    font-size: 12px;
+    line-height: 1.55;
+    color: rgba(242, 246, 252, 0.92);
+    padding-top: 5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ah-pair-badge {
+    align-self: flex-start;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ah-accent-strong);
+    background: var(--ah-pill-bg);
+    border: 1px solid var(--ah-pill-border);
+    border-radius: 8px;
+    padding: 3px 9px;
+}
+
+.ah-conn-dynamic {
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--ah-text);
+}
+
+.ah-timeline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-left: 4px;
+}
+
+.ah-timeline-item {
+    position: relative;
+    padding-left: 14px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ah-text);
+}
+
+.ah-timeline-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 7px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--ah-dot);
+    box-shadow: 0 0 6px var(--ah-dot);
+}
+
+.ah-private {
+    margin-top: 2px;
+    background:
+        radial-gradient(100% 90% at 85% 0%, rgba(185, 145, 255, 0.10), transparent 70%),
+        rgba(14, 16, 26, 0.52);
+    border: 1px solid rgba(197, 219, 243, 0.22);
+    border-top-color: rgba(255, 255, 255, 0.24);
+    border-radius: 13px;
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    overflow: hidden;
+    transition: border-color 0.25s ease;
+}
+
+.ah-private[open] {
+    border-color: var(--ah-pill-border);
+}
+
+.ah-private-summary {
+    padding: 10px 13px;
+    cursor: pointer;
+    list-style: none;
+    color: var(--ah-accent);
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+}
+
+.ah-private-summary::-webkit-details-marker {
+    display: none;
+}
+
+.ah-lock-open {
+    display: none;
+}
+
+.ah-private[open] .ah-lock-closed {
+    display: none;
+}
+
+.ah-private[open] .ah-lock-open {
+    display: inline;
+}
+
+.ah-private-body {
+    padding: 2px 11px 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: ahCascadeIn 0.22s ease-out;
+}
+
+.ah-secret-row {
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: rgba(240, 245, 252, 0.92);
+}
+
+.ah-secret-tag {
+    color: var(--ah-pill-text);
+    font-weight: 600;
+    margin-right: 4px;
+}

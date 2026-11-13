@@ -38,6 +38,7 @@ RULES
     const defaultSettings = {
         enabled: true,
         openLatest: false,
+        theme: 'moonlight',
         injectPrompt: false,
         promptPosition: 0, // 0 = IN_PROMPT (System Prompt, как тоггл в пресете), 1 = IN_CHAT (на глубине Depth)
         promptDepth: 2,
@@ -136,11 +137,14 @@ RULES
     }
 
     function buildAfterHoursHtml(rawInner, isOpen) {
+        const settings = getSettings();
+        const theme = settings.theme || 'moonlight';
         const sections = parseAfterHours(rawInner);
         const mainSections = sections.filter(s => s.type !== 'private');
         const privateSections = sections.filter(s => s.type === 'private');
 
         let bodyHtml = '';
+        let timePreview = '';
 
         for (const sec of mainSections) {
             if (!sec.lines.length) continue;
@@ -154,6 +158,10 @@ RULES
                         if (idx !== -1) {
                             const k = sub.slice(0, idx).trim();
                             const v = sub.slice(idx + 1).trim();
+                            if (sec.type === 'scene' && /^(?:время|time)$/i.test(k) && v) {
+                                const clockMatch = v.match(/\b\d{1,2}:\d{2}\b/);
+                                timePreview = clockMatch ? clockMatch[0] : (v.length <= 18 ? v : v.slice(0, 16) + '…');
+                            }
                             rowsHtml += `<div class="ah-kv-row"><span class="ah-kv-label">${escapeHtml(k)}</span><span class="ah-kv-val">${escapeHtml(v)}</span></div>`;
                         } else {
                             rowsHtml += `<div class="ah-kv-row"><span class="ah-kv-val">${escapeHtml(sub)}</span></div>`;
@@ -224,17 +232,22 @@ RULES
 
             bodyHtml += `<details class="ah-private">
                 <summary class="ah-private-summary">
-                    <span>🔒 PRIVATE ACCESS</span>
+                    <span><span class="ah-lock-closed">🔒</span><span class="ah-lock-open">🔓</span> PRIVATE ACCESS</span>
                     <span class="ah-chevron">⌄</span>
                 </summary>
                 <div class="ah-private-body">${privCards}</div>
             </details>`;
         }
 
-        return `<details class="ah-root"${isOpen ? ' open' : ''}>
+        return `<details class="ah-root" data-ah-theme="${escapeHtml(theme)}"${isOpen ? ' open' : ''}>
             <summary class="ah-summary">
-                <span>☾ AFTER HOURS</span>
-                <span class="ah-status-right">STATUS <span class="ah-chevron">⌄</span></span>
+                <span class="ah-title-left"><span class="ah-moon">☾</span> AFTER HOURS</span>
+                <span class="ah-status-right">
+                    ${timePreview ? `<span class="ah-time-preview">${escapeHtml(timePreview)}</span>` : ''}
+                    <span class="ah-pulse-dot"></span>
+                    <span>STATUS</span>
+                    <span class="ah-chevron">⌄</span>
+                </span>
             </summary>
             <div class="ah-divider"></div>
             <div class="ah-content">${bodyHtml}</div>
@@ -280,7 +293,8 @@ RULES
         if (typeof ctx.messageFormatting === 'function') {
             let cleanProse = rawMes
                 .replace(/<AFTERHOURS>[\s\S]*?<\/AFTERHOURS>\s*/i, '')
-                .replace(/<(?:think|thinking|thought)>[\s\S]*?<\/(?:think|thinking|thought)>\s*/gi, '');
+                .replace(/<(?:think|thinking|thought)>[\s\S]*?<\/(?:think|thinking|thought)>\s*/gi, '')
+                .replace(/(?:^|\n)\s*1\.\s*\*{0,2}Input\s*&\s*Anchor[\s\S]*?4\.\s*\*{0,2}Style\s*&\s*Modules[^\n]*(?:\r?\n)+/i, '\n');
             const msg = ctx.chat[id];
             const formattedProse = ctx.messageFormatting(
                 cleanProse,
@@ -353,6 +367,16 @@ RULES
                     <input id="ah_open_latest" type="checkbox" ${settings.openLatest ? 'checked' : ''}>
                     <span>Раскрывать блок в последнем сообщении</span>
                 </label>
+                <div style="margin-top:8px;">
+                    <small>Цветовая тема стекла: </small>
+                    <select id="ah_theme_select" class="text_pole" style="margin-top:4px;width:100%;">
+                        <option value="moonlight" ${(settings.theme || 'moonlight') === 'moonlight' ? 'selected' : ''}>❄️ Moonlight (Лунный лёд)</option>
+                        <option value="crimson" ${settings.theme === 'crimson' ? 'selected' : ''}>🍷 Crimson Noir (Тёмный рубин)</option>
+                        <option value="violet" ${settings.theme === 'violet' ? 'selected' : ''}>💜 Violet Afterglow (Ночной аметист)</option>
+                        <option value="amber" ${settings.theme === 'amber' ? 'selected' : ''}>🍂 Amber Warmth (Тёплый янтарь)</option>
+                        <option value="emerald" ${settings.theme === 'emerald' ? 'selected' : ''}>🌿 Emerald Mist (Изумрудный туман)</option>
+                    </select>
+                </div>
                 <hr>
                 <label class="checkbox_label">
                     <input id="ah_inject_prompt" type="checkbox" ${settings.injectPrompt ? 'checked' : ''}>
@@ -384,6 +408,13 @@ RULES
             settings.openLatest = e.target.checked;
             ctx.saveSettingsDebounced?.();
             processAllMessages();
+        });
+        document.getElementById('ah_theme_select')?.addEventListener('change', (e) => {
+            settings.theme = e.target.value || 'moonlight';
+            ctx.saveSettingsDebounced?.();
+            document.querySelectorAll('.ah-root').forEach(el => {
+                el.setAttribute('data-ah-theme', settings.theme);
+            });
         });
         document.getElementById('ah_inject_prompt')?.addEventListener('change', (e) => {
             settings.injectPrompt = e.target.checked;
