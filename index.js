@@ -100,8 +100,7 @@ RULES
 
     function parseAfterHours(rawInner) {
         const cleaned = rawInner
-            .replace(/«/g, '"')
-            .replace(/»/g, '"')
+            .replace(/[«»“”„]/g, '"')
             .replace(/<br\s*\/?>/gi, '\n')
             .replace(/<\/div>\s*<div[^>]*class=["']?ah-body["']?[^>]*>/gi, '\n')
             .replace(/<summary[^>]*>[\s\S]*?<\/summary>/gi, '\n[PRIVATE]\n')
@@ -272,7 +271,10 @@ RULES
                 existingRoot.remove();
             }
             if (match && typeof ctx.messageFormatting === 'function') {
-                const cleanProse = rawMes.replace(/<AFTERHOURS>[\s\S]*?<\/AFTERHOURS>\s*/i, '');
+                const cleanProse = rawMes
+                    .replace(/^[\s\S]*?<\/(?:think|thinking|thought)>\s*/i, '')
+                    .replace(/<(?:think|thinking|thought)>[\s\S]*?<\/(?:think|thinking|thought)>\s*/gi, '')
+                    .replace(/<AFTERHOURS>[\s\S]*?<\/AFTERHOURS>\s*/i, '');
                 const msg = ctx.chat[id];
                 mesEl.innerHTML = ctx.messageFormatting(
                     cleanProse,
@@ -292,8 +294,9 @@ RULES
 
         if (typeof ctx.messageFormatting === 'function') {
             let cleanProse = rawMes
-                .replace(/<AFTERHOURS>[\s\S]*?<\/AFTERHOURS>\s*/i, '')
+                .replace(/^[\s\S]*?<\/(?:think|thinking|thought)>\s*/i, '')
                 .replace(/<(?:think|thinking|thought)>[\s\S]*?<\/(?:think|thinking|thought)>\s*/gi, '')
+                .replace(/<AFTERHOURS>[\s\S]*?<\/AFTERHOURS>\s*/i, '')
                 .replace(/(?:^|\n)\s*1\.\s*\*{0,2}Input\s*&\s*Anchor[\s\S]*?4\.\s*\*{0,2}Style\s*&\s*Modules[^\n]*(?:\r?\n)+/i, '\n');
             const msg = ctx.chat[id];
             const formattedProse = ctx.messageFormatting(
