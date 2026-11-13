@@ -1,10 +1,15 @@
 (() => {
     const EXT_ID = 'st_after_hours';
     const PROMPT_KEY = 'after_hours_core_v4';
+    const PROMPT_VERSION = 2;
 
-    const DEFAULT_PROMPT = `You are AFTER HOURS, a compact universal roleplay state tracker.
+    const DEFAULT_PROMPT = `[AFTER HOURS — MODULE SPECIFICATION]
+You are AFTER HOURS, a compact universal roleplay state tracker.
 
-At the beginning of every in-character response, output exactly one status block before the roleplay prose.
+CRITICAL ORDER OF EXECUTION:
+1. If reasoning / Chain-of-Thought is active (e.g., <think>...</think> or numbered analysis steps like "1. Input & Anchor", "2. Database & Continuity", "3. Settings & Fixes", "4. Style & Modules"), you MUST complete all thinking steps and close </think> FIRST.
+2. NEVER output <AFTERHOURS> before or inside your thinking block.
+3. Immediately AFTER closing </think>, at the start of the visible roleplay message, output exactly one <AFTERHOURS> block, then continue with the roleplay prose.
 
 <AFTERHOURS>
 <div class="ah-section"><div class="ah-heading">📍 SCENE</div><div class="ah-body">Location: ...<br>Time: ...</div></div>
@@ -28,13 +33,15 @@ RULES
 - Use the exact HTML structure and class names shown above. Keep all HTML tags properly closed.
 - Use <br> for line breaks. No Markdown, asterisks, backticks, or code fences inside the block.
 - Do not add explanations or commentary inside the block.
-- Output exactly one <AFTERHOURS> block at the beginning of every in-character response. Continue normal roleplay prose after its closing tag.`;
+- Output the <AFTERHOURS> block only after all thinking/reasoning steps are finished, right before the roleplay prose.`;
 
     const defaultSettings = {
         enabled: true,
         openLatest: false,
         injectPrompt: false,
-        promptDepth: 1,
+        promptPosition: 0, // 0 = IN_PROMPT (System Prompt, как тоггл в пресете), 1 = IN_CHAT (на глубине Depth)
+        promptDepth: 2,
+        promptVersion: PROMPT_VERSION,
         promptText: DEFAULT_PROMPT
     };
 
@@ -43,12 +50,19 @@ RULES
         if (!ctx.extensionSettings[EXT_ID]) {
             ctx.extensionSettings[EXT_ID] = Object.assign({}, defaultSettings);
         }
+        const s = ctx.extensionSettings[EXT_ID];
         for (const k of Object.keys(defaultSettings)) {
-            if (ctx.extensionSettings[EXT_ID][k] === undefined) {
-                ctx.extensionSettings[EXT_ID][k] = defaultSettings[k];
+            if (s[k] === undefined) {
+                s[k] = defaultSettings[k];
             }
         }
-        return ctx.extensionSettings[EXT_ID];
+        // Авто-обновление старого текста промпта до v2 (с защитой думалки)
+        if ((s.promptVersion || 1) < PROMPT_VERSION) {
+            s.promptText = DEFAULT_PROMPT;
+            s.promptPosition = 0;
+            s.promptVersion = PROMPT_VERSION;
+        }
+        return s;
     }
 
     function escapeHtml(str) {
@@ -264,7 +278,9 @@ RULES
         const ahHtml = buildAfterHoursHtml(match[1], settings.openLatest && isLatest);
 
         if (typeof ctx.messageFormatting === 'function') {
-            const cleanProse = rawMes.replace(/<AFTERHOURS>[\s\S]*?<\/AFTERHOURS>\s*/i, '');
+            let cleanProse = rawMes
+                .replace(/<AFTERHOURS>[\s\S]*?<\/AFTERHOURS>\s*/i, '')
+                .replace(/<(?:think|thinking|thought)>[\s\S]*?<\/(?:think|thinking|thought)>\s*/gi, '');
             const msg = ctx.chat[id];
             const formattedProse = ctx.messageFormatting(
                 cleanProse,
@@ -302,14 +318,16 @@ RULES
         if (typeof ctx.setExtensionPrompt !== 'function') return;
         const settings = getSettings();
         if (settings.injectPrompt && settings.promptText.trim()) {
+            const pos = Number(settings.promptPosition) === 1 ? 1 : 0; // 0 = IN_PROMPT, 1 = IN_CHAT
+            const depth = Number(settings.promptDepth) || 2;
             ctx.setExtensionPrompt(
                 PROMPT_KEY,
                 settings.promptText.trim(),
-                1,
-                Number(settings.promptDepth) || 1
+                pos,
+                depth
             );
         } else {
-            ctx.setExtensionPrompt(PROMPT_KEY, '', 1, 1);
+            ctx.setExtensionPrompt(PROMPT_KEY, '', 0, 0);
         }
     }
 
@@ -341,6 +359,13 @@ RULES
                     <span>Авто-инжект промпта AFTER HOURS</span>
                 </label>
                 <div style="margin-top:6px;">
+                    <small>Позиция инжекта: </small>
+                    <select id="ah_prompt_pos" class="text_pole" style="margin-top:4px;width:100%;">
+                        <option value="0" ${Number(settings.promptPosition) === 0 ? 'selected' : ''}>В системном промпте (как тоггл пресета — не ломает думалку)</option>
+                        <option value="1" ${Number(settings.promptPosition) === 1 ? 'selected' : ''}>В чате на глубине (In-Chat @ Depth)</option>
+                    </select>
+                </div>
+                <div id="ah_depth_wrap" style="margin-top:6px;display:${Number(settings.promptPosition) === 1 ? 'block' : 'none'};">
                     <small>Глубина (Depth): </small>
                     <input id="ah_prompt_depth" class="text_pole" type="number" min="0" max="20" value="${settings.promptDepth}" style="width:70px;display:inline-block;">
                 </div>
@@ -365,8 +390,15 @@ RULES
             ctx.saveSettingsDebounced?.();
             syncExtensionPrompt();
         });
+        document.getElementById('ah_prompt_pos')?.addEventListener('change', (e) => {
+            settings.promptPosition = Number(e.target.value) || 0;
+            const wrap = document.getElementById('ah_depth_wrap');
+            if (wrap) wrap.style.display = settings.promptPosition === 1 ? 'block' : 'none';
+            ctx.saveSettingsDebounced?.();
+            syncExtensionPrompt();
+        });
         document.getElementById('ah_prompt_depth')?.addEventListener('change', (e) => {
-            settings.promptDepth = Number(e.target.value) || 1;
+            settings.promptDepth = Number(e.target.value) || 2;
             ctx.saveSettingsDebounced?.();
             syncExtensionPrompt();
         });
