@@ -253,6 +253,26 @@ RULES
         </details>`;
     }
 
+    function stripThinking(raw) {
+        return String(raw || '')
+            // Срезаем всё до последнего закрывающего </think>, даже если открывающий <think> был проглочен
+            .replace(/^[\s\S]*<\/(?:think|thinking|thought)>\s*/i, '')
+            // Срезаем любые оставшиеся парные блоки <think>...</think>
+            .replace(/<(?:think|thinking|thought)>[\s\S]*?<\/(?:think|thinking|thought)>\s*/gi, '')
+            // Срезаем протекшие шаги CoT, если модель вообще не поставила </think>
+            .replace(/(?:^|\n)\s*(?:#+\s*)?1[\.\–\-][\s\S]*?(?:#+\s*)?(?:4|7|8|9|10)[\.\–\-][^\n]*(?:\r?\n[\s\S]*?)?(?=<AFTERHOURS>)/i, '');
+    }
+
+    function extractRealAfterHours(cleanedText) {
+        // Берём только настоящий блок <AFTERHOURS>, внутри которого нет закрывающего </think> и который самый последний
+        const allMatches = [...cleanedText.matchAll(/<AFTERHOURS>\s*([\s\S]*?)\s*<\/AFTERHOURS>/gi)];
+        if (!allMatches.length) return null;
+        const last = allMatches[allMatches.length - 1];
+        // Если внутри почему-то оказалось ещё одно открытие <AFTERHOURS> (из-за упоминания тега в тексте выше), берём контент после самого последнего <AFTERHOURS>
+        const inner = last[1].replace(/^[\s\S]*<AFTERHOURS>\s*/i, '');
+        return inner;
+    }
+
     function processMessage(mesId) {
         const settings = getSettings();
         const ctx = SillyTavern.getContext();
@@ -260,7 +280,8 @@ RULES
         if (isNaN(id) || !ctx.chat || !ctx.chat[id]) return;
 
         const rawMes = String(ctx.chat[id].mes || '');
-        const match = rawMes.match(/<AFTERHOURS>\s*([\s\S]*?)\s*<\/AFTERHOURS>\s*/i);
+        const withoutThink = stripThinking(rawMes);
+        const ahInner = extractRealAfterHours(withoutThink);
         const mesEl = document.querySelector(`.mes[mesid="${id}"] .mes_text`);
         if (!mesEl) return;
 
@@ -270,11 +291,8 @@ RULES
             if (existingRoot) {
                 existingRoot.remove();
             }
-            if (match && typeof ctx.messageFormatting === 'function') {
-                const cleanProse = rawMes
-                    .replace(/^[\s\S]*?<\/(?:think|thinking|thought)>\s*/i, '')
-                    .replace(/<(?:think|thinking|thought)>[\s\S]*?<\/(?:think|thinking|thought)>\s*/gi, '')
-                    .replace(/<AFTERHOURS>[\s\S]*?<\/AFTERHOURS>\s*/i, '');
+            if (ahInner !== null && typeof ctx.messageFormatting === 'function') {
+                const cleanProse = withoutThink.replace(/<AFTERHOURS>[\s\S]*?<\/AFTERHOURS>\s*/gi, '');
                 const msg = ctx.chat[id];
                 mesEl.innerHTML = ctx.messageFormatting(
                     cleanProse,
@@ -287,17 +305,13 @@ RULES
             return;
         }
 
-        if (!match) return;
+        if (ahInner === null) return;
 
         const isLatest = id === ctx.chat.length - 1;
-        const ahHtml = buildAfterHoursHtml(match[1], settings.openLatest && isLatest);
+        const ahHtml = buildAfterHoursHtml(ahInner, settings.openLatest && isLatest);
 
         if (typeof ctx.messageFormatting === 'function') {
-            let cleanProse = rawMes
-                .replace(/^[\s\S]*?<\/(?:think|thinking|thought)>\s*/i, '')
-                .replace(/<(?:think|thinking|thought)>[\s\S]*?<\/(?:think|thinking|thought)>\s*/gi, '')
-                .replace(/<AFTERHOURS>[\s\S]*?<\/AFTERHOURS>\s*/i, '')
-                .replace(/(?:^|\n)\s*1\.\s*\*{0,2}Input\s*&\s*Anchor[\s\S]*?4\.\s*\*{0,2}Style\s*&\s*Modules[^\n]*(?:\r?\n)+/i, '\n');
+            const cleanProse = withoutThink.replace(/<AFTERHOURS>[\s\S]*?<\/AFTERHOURS>\s*/gi, '');
             const msg = ctx.chat[id];
             const formattedProse = ctx.messageFormatting(
                 cleanProse,
