@@ -229,18 +229,36 @@ RULES
 
     function processMessage(mesId) {
         const settings = getSettings();
-        if (!settings.enabled) return;
-
         const ctx = SillyTavern.getContext();
         const id = Number(mesId);
         if (isNaN(id) || !ctx.chat || !ctx.chat[id]) return;
 
         const rawMes = String(ctx.chat[id].mes || '');
         const match = rawMes.match(/<AFTERHOURS>\s*([\s\S]*?)\s*<\/AFTERHOURS>\s*/i);
-        if (!match) return;
-
         const mesEl = document.querySelector(`.mes[mesid="${id}"] .mes_text`);
         if (!mesEl) return;
+
+        // Если рендер выключен — мгновенно убираем инфоблок из сообщения, оставляя чистый текст поста
+        if (!settings.enabled) {
+            const existingRoot = mesEl.querySelector('.ah-root');
+            if (existingRoot) {
+                existingRoot.remove();
+            }
+            if (match && typeof ctx.messageFormatting === 'function') {
+                const cleanProse = rawMes.replace(/<AFTERHOURS>[\s\S]*?<\/AFTERHOURS>\s*/i, '');
+                const msg = ctx.chat[id];
+                mesEl.innerHTML = ctx.messageFormatting(
+                    cleanProse,
+                    msg.name,
+                    Boolean(msg.is_system),
+                    Boolean(msg.is_user),
+                    id
+                );
+            }
+            return;
+        }
+
+        if (!match) return;
 
         const isLatest = id === ctx.chat.length - 1;
         const ahHtml = buildAfterHoursHtml(match[1], settings.openLatest && isLatest);
